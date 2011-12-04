@@ -112,11 +112,24 @@ class TrimetApi(object):
     def __init__(self, appid):
         self.application_id = appid
 
+    def _build_url(self, key, params):
+        params['appID'] = self.application_id
+
+        query_params = []
+        for k,v in params.iteritems():
+            if type(v) == list:
+                query_params += [ (k,value) for value in v ]
+            else:
+                query_params.append((k,v))
+
+        query_string = '&'.join([ '='.join(kvpair) for kvpair in query_params ])
+
+        return "%s?%s" % (base_urls[key], query_string)
+
     def arrivals(self, location_ids):
-        url = "%(baseurl)s?appID=%(appid)s&locIDs=%(locids)s" % {
-                    'baseurl': base_urls['arrivals'],
-                    'appid'  : self.application_id,
-                    'locids' : ','.join(location_ids) }
+        params = { 'locIDs': ','.join(location_ids) }
+        url = self._build_url('arrivals', params)
+
         response = requests.get(url)
         if response.status_code == 200:
             return TrimetResult(response.content)
