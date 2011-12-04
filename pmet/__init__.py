@@ -8,11 +8,6 @@ base_urls = {
     'arrivals': 'http://developer.trimet.org/ws/V1/arrivals',
 }
 
-layover_attributes = ['start','end']
-arrival_attributes = ['block', 'departed', 'detour', 'dir', 'estimated', 'fullsign','locid','piece','route','scheduled', 'shortSign','status']
-block_position_attributes = ['at','feet','heading','lat','lng']
-trip_attributes = ['desc','destDist','dir','pattern','progress','route','tripNum']
-
 class TrimetParseError(Exception):
     pass
 
@@ -35,39 +30,101 @@ class TrimetLocation(object):
                     self.location_id, self.description, self.latitude,
                     self.longitude, self.traffic_direction )
 
+class TrimetArrival(object):
+
+    def __init__(self, element):
+        self.block       = element.get('block')
+        self.departed    = element.get('departed')
+        self.detour      = element.get('detour')
+        self.direction   = element.get('dir')
+        self.fullsign    = element.get('fullsign')
+        self.shortsign   = element.get('shortSign')
+        self.location_id = element.get('location_id')
+        self.piece       = element.get('piece')
+        self.route_number= element.get('route')
+        self.status      = element.get('status')
+
+        self.scheduled_arrival = element.get('scheduled')
+        if self.scheduled_arrival:
+            self.scheduled_arrival = datetime.datetime.fromtimestamp( float(self.scheduled_arrival) / 1000 )
+
+        self.estimated_arrival = element.get('estimated')
+        if self.estimated_arrival:
+            self.estimated_arrival = datetime.datetime.fromtimestamp( float(self.estimated_arrival) / 1000 )
+
+        block_positions = element.xpath("./*[local-name()='blockPosition']")
+        if len(block_positions) > 1:
+            raise TrimetParseError("Error: Too many <blockPosition> elements")
+        self.block_position = TrimetBlockPosition(block_positions[0])
+
+    def __repr__(self):
+        return "TrimetArrival<%s>" % (self.__str__())
+
+    def __str__(self):
+        d = dict(self.__dict__)
+        return str(d)
+
+class TrimetBlockPosition(object):
+    def __init__(self, element):
+        self.latitude  = element.get('lat')
+        self.longitude = element.get('lng')
+        self.heading   = element.get('heading')
+        self.at        = element.get('at')
+        self.feet      = element.get('feet')
+        self.trips     = [ TrimetTrip(trip) for trip in element.xpath("./*[local-name()='trip']") ]
+        self.layovers  = [ TrimetLayover(layover) for layover in element.xpath("./*[local-name()='layover']") ]
+
+    def __str__(self):
+        d = dict(self.__dict__)
+        d['trips']    = [ trip.__str__() for trip in self.trips ]
+        d['layovers'] = [ layover.__str__() for layover in self.layovers ]
+        return str(d)
+
+    def __repr__(self):
+        return "TrimetBlockPosition<%s>" % self.__str__()
+
+class TrimetTrip(object):
+    def __init__(self, element):
+        self.description = element.get('desc')
+        self.destination_distance = element.get('destDist')
+        self.direction = element.get('dir')
+        self.pattern = element.get('pattern')
+        self.progress = element.get('progress')
+        self.route = element.get('route')
+        self.trip_number = element.get('tripNum')
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return "TrimetTrip<%s>" % str(self.__dict__)
+
+class TrimetLayover(object):
+    def __init__(self, element):
+        self.start = element.get('start')
+        self.end   = element.get('end')
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return "TrimetLayover<%s>" % str(self.__dict__)
+
+class TrimetRouteStatus(object):
+    def __init__(self, element):
+        self.route  = element.get('route')
+        self.status = element.get('status')
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return "TrimetRouteStatus<%s>" % str(self.__dict__)
+
 class TrimetResult(dict):
     def __init__(self, content):
         dict.__init__(self)
         self._process_result(content)
-
-    def _parse_arrival(self, element):
-        arrival = dict((k, element.get(k)) for k in arrival_attributes)
-
-        block_position_elements = element.xpath("./*[local-name()='blockPosition']")
-        if block_position_elements:
-            block_position_element = block_position_elements[0]
-            if len(block_position_elements) > 1:
-                raise TrimetParseError("Error: Too many <blockPosition> elements")
-
-            block_position = dict((k, block_position_element.get(k)) for k in block_position_attributes)
-
-            trip_elements = block_position_element.xpath("./*[local-name()='trip']")
-            if trip_elements:
-                block_position['trips'] = [
-                    dict((k, trip_element.get(k)) for k in trip_attributes)
-                    for trip_element in trip_elements
-                ]
-
-            layover_elements = block_position_element.xpath("./*[local-name()='layover']")
-            if layover_elements:
-                block_position['layovers'] = [
-                    dict((k, layover_element.get(k)) for k in layover_attributes)
-                    for layover_element in layover_elements
-                ]
-
-            arrival['block_position'] = block_position
-
-        return arrival
 
     def _parse_error_message(self, tree):
         """ Parse out the <errorMessage> in the <resultSet>. """
@@ -76,35 +133,25 @@ class TrimetResult(dict):
             if len(elements) > 1:
                 raise TrimetParseError("Error: Too many <errorMessage> elements")
             else:
-                self['error_message'] = elements[0].text()
+                self['error_message'] = elements[0].text
 
     def _parse_query_time(self, tree):
         """ Parse out the queryTime attribute on the resultSet. """
-        query_time_in_ms = float(tree.get('queryTime'))
-        self['query_time'] = datetime.datetime.fromtimestamp(query_time_in_ms / 1000)
-
-    def _parse_locations(self, tree):
-        """ Parse out all of the <location> elements in the <resultSet> """
-        self['locations'] = [ TrimetLocation(location) for location in tree.xpath("./*[local-name()='location']") ]
+        query_time_in_ms = tree.get('queryTime')
+        if query_time_in_ms:
+            self['query_time'] = datetime.datetime.fromtimestamp( float(query_time_in_ms) / 1000)
+        else:
+            self['query_time'] = None
 
     def _process_result(self, content):
         tree = etree.fromstring(content)
 
         self._parse_query_time(tree)
         self._parse_error_message(tree)
-        self._parse_locations(tree)
 
-        arrival_elements = tree.xpath("./*[local-name()='arrival']")
-        if arrival_elements:
-            self['arrivals'] = [ self._parse_arrival(arrival_element)
-                                    for arrival_element in arrival_elements ]
-
-        route_status_elements = tree.xpath("./*[local-name()='routeStatus']")
-        if route_status_elements:
-            self['route-status'] = [
-                    dict((k, route_status.get(k)) for k in ['route','status'])
-                    for route_status in route_status_elements
-                    ]
+        self['locations']      = [ TrimetLocation(location) for location in tree.xpath("./*[local-name()='location']") ]
+        self['arrivals']       = [ TrimetArrival(arrival) for arrival in tree.xpath("./*[local-name()='arrival']") ]
+        self['route_statuses'] = [ TrimetRouteStatus(route_status) for route_status in tree.xpath("./*[local-name()='routeStatus']") ]
 
 class TrimetApi(object):
     application_id = None
