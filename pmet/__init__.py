@@ -4,8 +4,11 @@ import sys
 import requests
 from lxml import etree
 
+import pmet.utils
+
 base_urls = {
     'arrivals': 'http://developer.trimet.org/ws/V1/arrivals',
+    'detours' : 'http://developer.trimet.org/ws/V1/detours',
 }
 
 class TrimetParseError(Exception):
@@ -152,6 +155,42 @@ class TrimetResult(dict):
         self['locations']      = [ TrimetLocation(location) for location in tree.xpath("./*[local-name()='location']") ]
         self['arrivals']       = [ TrimetArrival(arrival) for arrival in tree.xpath("./*[local-name()='arrival']") ]
         self['route_statuses'] = [ TrimetRouteStatus(route_status) for route_status in tree.xpath("./*[local-name()='routeStatus']") ]
+        self['detours']        = [ Detour(detour) for detour in tree.xpath("./*[local-name()='detour']") ]
+
+class Route(object):
+    def __init__(self, element):
+        self.decription = element.get('desc')
+        self.route_id   = element.get('route')
+
+        # B => Bus, R => Rail or Aerial Tram
+        self.type = element.get('type')
+
+    @property
+    def is_bus(self):
+        return self.type == 'B'
+
+    def __str__(self):
+        return str(self.__dict__)
+
+    def __repr__(self):
+        return "%s<%s>" % (self.__class__.__name__, self.__str__())
+
+class Detour(object):
+    def __init__(self, element):
+        self.begin = pmet.utils.get_datetime_from_milliseconds( element.get('begin') )
+        self.end   = pmet.utils.get_datetime_from_milliseconds( element.get('end') )
+
+        self.description = element.get('desc')
+        self.detour_id   = element.get('id')
+        self.phonetic    = element.get('phonetic')
+
+        self.routes = [ Route(route) for route in element.xpath("./*[local-name()='route']") ]
+
+    def __repr__(self):
+        return "%s<%s>" % (self.__class__.__name__, self.__str__())
+
+    def __str__(self):
+        return str(self.__dict__)
 
 class TrimetApi(object):
     application_id = None
@@ -183,11 +222,25 @@ class TrimetApi(object):
         else:
             raise TrimetHTTPError("HTTP Code: %d" % (response.status_code))
 
+    def detours(self, routes):
+        params = { 'routes': ','.join(routes) }
+        url = self._build_url('detours', params)
+
+        response = requests.get(url)
+        if response.status_code == 200:
+            return TrimetResult(response.content)
+        else:
+            raise TrimetHTTPError("HTTP Code: %d" % (response.status_code))
+
 if __name__ == '__main__':
-    api = TrimetApi('YOUR_API_KEY_HERE')
-    from pprint import pprint as PP
-    PP(api.arrivals(['6849']))
+    # api = TrimetApi('YOUR_API_KEY_HERE')
+    # from pprint import pprint as PP
+    # PP(api.arrivals(['6849']))
 
     # with open('test-arrival.xml') as xmlfh:
     #     from pprint import pprint as PP
     #     PP(TrimetResult(xmlfh.read()))
+
+    api = TrimetApi('YOUR_API_KEY_HERE')
+    from pprint import pprint as PP
+    PP(api.detours(['44']))
