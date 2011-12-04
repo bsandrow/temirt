@@ -19,6 +19,22 @@ class TrimetParseError(Exception):
 class TrimetHTTPError(Exception):
     pass
 
+class TrimetLocation(object):
+    def __init__(self, loc_element):
+        self.description       = loc_element.get('desc')
+        self.latitude          = loc_element.get('lat')
+        self.longitude         = loc_element.get('lng')
+        self.traffic_direction = loc_element.get('dir')
+        self.location_id       = loc_element.get('locid')
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "TrimetLocation<%s,'%s',%s,%s,'%s'>" % (
+                    self.location_id, self.description, self.latitude,
+                    self.longitude, self.traffic_direction )
+
 class TrimetResult(dict):
     def __init__(self, content):
         dict.__init__(self)
@@ -69,12 +85,7 @@ class TrimetResult(dict):
 
     def _parse_locations(self, tree):
         """ Parse out all of the <location> elements in the <resultSet> """
-        locations = tree.xpath("./*[local-name()='location']")
-        if locations:
-            self['locations'] = [
-                    dict((k, location.get(k)) for k in ['desc','lat','lng','dir','locid'])
-                    for location in locations
-                ]
+        self['locations'] = [ TrimetLocation(location) for location in tree.xpath("./*[local-name()='location']") ]
 
     def _process_result(self, content):
         tree = etree.fromstring(content)
