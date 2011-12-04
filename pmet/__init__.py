@@ -184,7 +184,7 @@ class TrimetApi(object):
             raise TrimetHTTPError("HTTP Code: %d" % (response.status_code))
 
 if __name__ == '__main__':
-    api = TrimetApi()
+    api = TrimetApi('YOUR_API_KEY_HERE')
     from pprint import pprint as PP
     PP(api.arrivals(['6849']))
 
