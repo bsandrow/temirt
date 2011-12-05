@@ -1,3 +1,5 @@
+import datetime
+
 import pmet.utils
 
 class Location(object):
@@ -23,7 +25,7 @@ class Arrival(object):
         self.departed    = element.get('departed')
         self.detour      = element.get('detour')
         self.direction   = element.get('dir')
-        self.fullsign    = element.get('fullsign')
+        self.fullsign    = element.get('fullSign')
         self.shortsign   = element.get('shortSign')
         self.location_id = element.get('location_id')
         self.piece       = element.get('piece')
