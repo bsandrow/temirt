@@ -124,38 +124,6 @@ class TrimetRouteStatus(object):
     def __repr__(self):
         return "TrimetRouteStatus<%s>" % str(self.__dict__)
 
-class TrimetResult(dict):
-    def __init__(self, content):
-        dict.__init__(self)
-        self._process_result(content)
-
-    def _parse_error_message(self, tree):
-        """ Parse out the <errorMessage> in the <resultSet>. """
-        elements = tree.xpath("./*[local-name()='errorMessage']")
-        if elements:
-            if len(elements) > 1:
-                raise TrimetParseError("Error: Too many <errorMessage> elements")
-            else:
-                self['error_message'] = elements[0].text
-
-    def _parse_query_time(self, tree):
-        """ Parse out the queryTime attribute on the resultSet. """
-        query_time_in_ms = tree.get('queryTime')
-        if query_time_in_ms:
-            self['query_time'] = datetime.datetime.fromtimestamp( float(query_time_in_ms) / 1000)
-        else:
-            self['query_time'] = None
-
-    def _process_result(self, content):
-        tree = etree.fromstring(content)
-
-        self._parse_query_time(tree)
-        self._parse_error_message(tree)
-
-        self['locations']      = [ TrimetLocation(location) for location in tree.xpath("./*[local-name()='location']") ]
-        self['arrivals']       = [ TrimetArrival(arrival) for arrival in tree.xpath("./*[local-name()='arrival']") ]
-        self['route_statuses'] = [ TrimetRouteStatus(route_status) for route_status in tree.xpath("./*[local-name()='routeStatus']") ]
-
 class BaseResult(dict):
     """The base class for handling <resultSet> responses from the Trimet API
     service. Subclasses can define the _process_result_xml() method to hook
@@ -180,6 +148,13 @@ class BaseResult(dict):
 
     def _process_result_xml(self, tree):
         pass
+
+class ArrivalsResult(BaseResult):
+    def _process_result_xml(self, tree):
+        self['query_time']     = pmet.utils.get_datetime_from_milliseconds( tree.get('queryTime') )
+        self['locations']      = [ TrimetLocation(location) for location in tree.xpath("./*[local-name()='location']") ]
+        self['arrivals']       = [ TrimetArrival(arrival) for arrival in tree.xpath("./*[local-name()='arrival']") ]
+        self['route_statuses'] = [ TrimetRouteStatus(route_status) for route_status in tree.xpath("./*[local-name()='routeStatus']") ]
 
 class DetoursResult(BaseResult):
     def _process_result_xml(self, tree):
@@ -246,7 +221,7 @@ class TrimetApi(object):
 
         response = requests.get(url)
         if response.status_code == 200:
-            return TrimetResult(response.content)
+            return ArrivalsResult(response.content)
         else:
             raise TrimetHTTPError("HTTP Code: %d" % (response.status_code))
 
