@@ -32,7 +32,7 @@ class Api(object):
         return "%s?%s" % (base_urls[key], query_string)
 
     def arrivals(self, location_ids):
-        params = { 'locIDs': ','.join(location_ids) }
+        params = { 'locIDs': ','.join(str(locid) for locid in location_ids) }
         url = self._build_url('arrivals', params)
 
         response = requests.get(url)
