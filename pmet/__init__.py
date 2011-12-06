@@ -52,7 +52,10 @@ class Api(object):
             raise PmetHTTPError("HTTP Code: %d" % (response.status_code))
 
 if __name__ == '__main__':
-    # api = TrimetApi('YOUR_API_KEY_HERE')
+    import os
+    API_KEY = os.environ['TRIMET_API_KEY']
+
+    # api = Api(API_KEY)
     # from pprint import pprint as PP
     # PP(api.arrivals(['6849']))
 
@@ -60,6 +63,6 @@ if __name__ == '__main__':
     #     from pprint import pprint as PP
     #     PP(TrimetResult(xmlfh.read()))
 
-    api = TrimetApi('YOUR_API_KEY_HERE')
+    api = Api(API_KEY)
     from pprint import pprint as PP
     PP(api.detours(['44']))
