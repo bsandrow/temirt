@@ -43,21 +43,20 @@ def run():
     print "\nArrivals (Stop ID: %s):" % options.stop_id
     for arrival in result['arrivals']:
         if arrival.status == 'estimated':
-            print "%02s minutes (scheduled at %s) -- %s" % (
-                    get_estimated_duration(arrival.estimated_arrival),
+            print " %2.2s minutes  (scheduled at %s) -- %s" % (
+                    get_estimated_duration(arrival.estimated_arrival).strip(),
                     get_scheduled_date(arrival.scheduled_arrival),
                     arrival.fullsign
                     )
         else:
-            print "%02s minutes* (scheduled at %s) -- %s" % (
-                    get_estimated_duration(arrival.scheduled_arrival),
+            print " %2.2s minutes* (scheduled at %s) -- %s" % (
+                    get_estimated_duration(arrival.scheduled_arrival).strip(),
                     get_scheduled_date(arrival.scheduled_arrival),
                     arrival.fullsign
                     )
 
 
-    print "\n * - calculated from scheduled time, no estimated available."
-
+    print "\n * calculated from scheduled time, no estimated available."
 
 if __name__ == '__main__':
     try:
