@@ -41,9 +41,10 @@ class Arrival(object):
             self.estimated_arrival = datetime.datetime.fromtimestamp( float(self.estimated_arrival) / 1000 )
 
         block_positions = element.xpath("./*[local-name()='blockPosition']")
-        if len(block_positions) > 1:
-            raise PmetParseError("Error: Too many <blockPosition> elements")
-        self.block_position = BlockPosition(block_positions[0])
+        if block_positions:
+            if len(block_positions) > 1:
+                raise PmetParseError("Error: Too many <blockPosition> elements")
+            self.block_position = BlockPosition(block_positions[0])
 
     def __repr__(self):
         return "Arrival<%s>" % (self.__str__())
