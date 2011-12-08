@@ -29,8 +29,8 @@ def format_detour(detour):
 def run():
     options, parser = process_args()
 
-    api = pmet.Api(options.api_key)
-    result = api.detours(options.route_id or [])
+    pmet.api.application_id = options.api_key
+    result = pmet.api.detours(options.route_id or [])
 
     if 'error_message' in result:
         sys.exit("Error: %s" % result['error_message'])

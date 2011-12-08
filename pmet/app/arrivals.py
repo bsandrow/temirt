@@ -31,9 +31,9 @@ def get_estimated_duration(estimated_time):
 def run():
     options, parser = process_args()
 
-    api = pmet.Api(options.api_key)
+    pmet.api.application_id = options.api_key
 
-    result = api.arrivals([ options.stop_id ])
+    result = pmet.api.arrivals([ options.stop_id ])
 
     if 'query_time' in result:
         print "[data as of: %s]" % result['query_time'].strftime('%a, %B %d %Y, %H:%M')
