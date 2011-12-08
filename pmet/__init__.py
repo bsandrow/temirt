@@ -42,7 +42,7 @@ class Api(object):
             raise PmetHTTPError("HTTP Code: %d" % (response.status_code))
 
     def detours(self, routes):
-        params = { 'routes': ','.join(routes) }
+        params = { 'routes': ','.join(str(route) for route in routes) }
         url = self._build_url('detours', params)
 
         response = requests.get(url)
@@ -50,6 +50,7 @@ class Api(object):
             return pmet.results.DetoursResult(response.content)
         else:
             raise PmetHTTPError("HTTP Code: %d" % (response.status_code))
+
 
 if __name__ == '__main__':
     import os
