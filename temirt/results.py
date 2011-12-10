@@ -1,8 +1,8 @@
 from lxml import etree
 
-import pmet.utils
-import pmet.elements
-from pmet.errors import PmetParseError
+import temirt.utils
+import temirt.elements
+from temirt.errors import TemirtParseError
 
 class BaseResult(dict):
     """The base class for handling <resultSet> responses from the Trimet API
@@ -22,7 +22,7 @@ class BaseResult(dict):
         error_messages = tree.xpath("./*[local-name()='errorMessage']")
         if error_messages:
             if len(error_messages) > 1:
-                raise PmetParseError("Error: Too many <errorMessage> elements")
+                raise TemirtParseError("Error: Too many <errorMessage> elements")
             else:
                 self['error_message'] = error_messages[0].text
 
@@ -31,11 +31,11 @@ class BaseResult(dict):
 
 class ArrivalsResult(BaseResult):
     def _process_result_xml(self, tree):
-        self['query_time']     = pmet.utils.get_datetime_from_milliseconds( tree.get('queryTime') )
-        self['locations']      = [ pmet.elements.Location(location) for location in tree.xpath("./*[local-name()='location']") ]
-        self['arrivals']       = [ pmet.elements.Arrival(arrival) for arrival in tree.xpath("./*[local-name()='arrival']") ]
-        self['route_statuses'] = [ pmet.elements.RouteStatus(route_status) for route_status in tree.xpath("./*[local-name()='routeStatus']") ]
+        self['query_time']     = temirt.utils.get_datetime_from_milliseconds( tree.get('queryTime') )
+        self['locations']      = [ temirt.elements.Location(location) for location in tree.xpath("./*[local-name()='location']") ]
+        self['arrivals']       = [ temirt.elements.Arrival(arrival) for arrival in tree.xpath("./*[local-name()='arrival']") ]
+        self['route_statuses'] = [ temirt.elements.RouteStatus(route_status) for route_status in tree.xpath("./*[local-name()='routeStatus']") ]
 
 class DetoursResult(BaseResult):
     def _process_result_xml(self, tree):
-        self['detours'] = [ pmet.elements.Detour(detour) for detour in tree.xpath("./*[local-name()='detour']") ]
+        self['detours'] = [ temirt.elements.Detour(detour) for detour in tree.xpath("./*[local-name()='detour']") ]

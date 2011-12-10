@@ -4,7 +4,7 @@ import datetime
 import sys
 import textwrap
 
-import pmet
+import temirt
 
 def process_args():
     parser = argparse.ArgumentParser(description='Access to trimet arrivals.')
@@ -29,8 +29,8 @@ def format_detour(detour):
 def run():
     options, parser = process_args()
 
-    pmet.api.application_id = options.api_key
-    result = pmet.api.detours(options.route_id or [])
+    temirt.api.application_id = options.api_key
+    result = temirt.api.detours(options.route_id or [])
 
     if 'error_message' in result:
         sys.exit("Error: %s" % result['error_message'])

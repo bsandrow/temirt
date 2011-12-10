@@ -1,6 +1,6 @@
 import datetime
 
-import pmet.utils
+import temirt.utils
 
 class Location(object):
     def __init__(self, loc_element):
@@ -43,7 +43,7 @@ class Arrival(object):
         block_positions = element.xpath("./*[local-name()='blockPosition']")
         if block_positions:
             if len(block_positions) > 1:
-                raise PmetParseError("Error: Too many <blockPosition> elements")
+                raise TemirtParseError("Error: Too many <blockPosition> elements")
             self.block_position = BlockPosition(block_positions[0])
 
     def __repr__(self):
@@ -130,8 +130,8 @@ class Route(object):
 
 class Detour(object):
     def __init__(self, element):
-        self.begin = pmet.utils.get_datetime_from_milliseconds( element.get('begin') )
-        self.end   = pmet.utils.get_datetime_from_milliseconds( element.get('end') )
+        self.begin = temirt.utils.get_datetime_from_milliseconds( element.get('begin') )
+        self.end   = temirt.utils.get_datetime_from_milliseconds( element.get('end') )
 
         self.description = element.get('desc')
         self.detour_id   = element.get('id')

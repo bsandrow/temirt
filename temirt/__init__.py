@@ -1,4 +1,4 @@
-import pmet.api as api
+import temirt.api as api
 
 if __name__ == '__main__':
     import os

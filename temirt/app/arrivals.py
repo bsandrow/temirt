@@ -3,7 +3,7 @@ import argparse
 import datetime
 import sys
 
-import pmet
+import temirt
 
 def process_args():
     parser = argparse.ArgumentParser(description='Access to trimet arrivals.')
@@ -31,9 +31,9 @@ def get_estimated_duration(estimated_time):
 def run():
     options, parser = process_args()
 
-    pmet.api.application_id = options.api_key
+    temirt.api.application_id = options.api_key
 
-    result = pmet.api.arrivals([ options.stop_id ])
+    result = temirt.api.arrivals([ options.stop_id ])
 
     if 'query_time' in result:
         print "[data as of: %s]" % result['query_time'].strftime('%a, %B %d %Y, %H:%M')

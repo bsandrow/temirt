@@ -3,8 +3,8 @@ import sys
 
 import requests
 
-import pmet.results
-from pmet.errors import PmetHTTPError, PmetParseError
+import temirt.results
+from temirt.errors import TemirtHTTPError, TemirtParseError
 
 application_id = None
 base_urls      = {
@@ -32,9 +32,9 @@ def arrivals(location_ids):
 
     response = requests.get(url)
     if response.status_code == 200:
-        return pmet.results.ArrivalsResult(response.content)
+        return temirt.results.ArrivalsResult(response.content)
     else:
-        raise PmetHTTPError("HTTP Code: %d" % (response.status_code))
+        raise TemirtHTTPError("HTTP Code: %d" % (response.status_code))
 
 def detours(routes):
     params = { 'routes': ','.join(str(route) for route in routes) }
@@ -42,7 +42,7 @@ def detours(routes):
 
     response = requests.get(url)
     if response.status_code == 200:
-        return pmet.results.DetoursResult(response.content)
+        return temirt.results.DetoursResult(response.content)
     else:
-        raise PmetHTTPError("HTTP Code: %d" % (response.status_code))
+        raise TemirtHTTPError("HTTP Code: %d" % (response.status_code))
 
