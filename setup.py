@@ -11,7 +11,7 @@ config = {
     'url'               : 'http://github.com/bsandrow/pmet',
     'author_email'      : 'brandon@sandrowicz.org',
     'version'           : 0.1,
-    'install_requires'  : [],
+    'install_requires'  : ['requests', 'lxml'],
     'packages'          : ['pmet'],
     'name'              : 'Pmet',
 }
